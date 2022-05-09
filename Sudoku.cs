@@ -241,26 +241,38 @@
 
         private bool GetPossibilities(int row, int col)
         {
-            IList<int> NumbersToRemove = new List<int>();
-            IList<int> NumbersInRow = CheckRow(row);
-            IList<int> NumbersInColumn = CheckColumn(col);
-            IList<int> NumbersInBox = CheckBox(row, col);
-            foreach (int number in board[row, col].PossibleNumbers)
+            List<int> NumbersToRemove = new List<int>();
+            NumbersToRemove.AddRange(CheckRow(row));
+            NumbersToRemove.AddRange(CheckColumn(col));
+            NumbersToRemove.AddRange(CheckBox(row, col));
+            NumbersToRemove.AddRange(CheckOtherBoxesInColumn(row, col));
+            NumbersToRemove.AddRange(CheckOtherBoxesInRow(row, col));
+            if (board[row, col].RemovePossibleNumbers(NumbersToRemove))
             {
-                if (CheckOtherBoxesInColumn(row, col, number) || CheckOtherBoxesInRow(row, col, number))
+                if (board[row, col].PossibleNumbers.Count == 0)
                 {
-                    NumbersToRemove.Add(number);
+                    throw new InvalidSudokuException("No possible numbers");
                 }
-            }
-            if (board[row, col].RemovePossibleNumbers(NumbersInBox) ||
-            board[row, col].RemovePossibleNumbers(NumbersInRow) ||
-            board[row, col].RemovePossibleNumbers(NumbersInColumn) ||
-            board[row, col].RemovePossibleNumbers(NumbersToRemove))
-            {
                 return true;
             }
+            else
+            {
+                NumbersToRemove.AddRange(CheckNakedPair(row, col));
+                if (board[row, col].RemovePossibleNumbers(NumbersToRemove))
+                {
+                    if (board[row, col].PossibleNumbers.Count == 0)
+                    {
+                        throw new InvalidSudokuException("No possible numbers");
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
-            return false;
+
         }
 
         public bool IsSolved
@@ -433,8 +445,9 @@
             }
             return false;
         }
-        private bool CheckOtherBoxesInRow(int row, int col, int number)
+        private IList<int> CheckOtherBoxesInRow(int row, int col)
         {
+            List<int> NumbersToRemove = new List<int>();
             int firstColumn, secondColumn, startRow;
             bool inRow = false;
             bool outsideRow = false;
@@ -465,62 +478,64 @@
                 firstColumn = 0;
                 secondColumn = 3;
             }
-            for (int i = startRow; i < startRow + 3; i++)
+            foreach (int number in board[row, col].PossibleNumbers)
             {
-
-                for (int j = firstColumn; j < firstColumn + 3; j++)
+                for (int i = startRow; i < startRow + 3; i++)
                 {
-                    if (i == row)
+
+                    for (int j = firstColumn; j < firstColumn + 3; j++)
                     {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        if (i == row)
                         {
-                            inRow = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                inRow = true;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        else
                         {
-                            outsideRow = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                outsideRow = true;
+                            }
                         }
                     }
                 }
-            }
-            if (inRow && !outsideRow)
-            {
-                return true;
-            }
-            inRow = false;
-            outsideRow = false;
-            for (int i = startRow; i < startRow + 3; i++)
-            {
-                for (int j = secondColumn; j < secondColumn + 3; j++)
+                if (inRow && !outsideRow)
                 {
-                    if (i == row)
+                    NumbersToRemove.Add(number);
+                }
+                inRow = false;
+                outsideRow = false;
+                for (int i = startRow; i < startRow + 3; i++)
+                {
+                    for (int j = secondColumn; j < secondColumn + 3; j++)
                     {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        if (i == row)
                         {
-                            inRow = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                inRow = true;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        else
                         {
-                            outsideRow = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                outsideRow = true;
+                            }
                         }
                     }
                 }
+                if (inRow && !outsideRow)
+                {
+                    NumbersToRemove.Add(number);
+                }
             }
-            if (inRow && !outsideRow)
-            {
-                return true;
-            }
-
-            return false;
+            return NumbersToRemove;
 
         }
-        private bool CheckOtherBoxesInColumn(int row, int col, int number)
+        private IList<int> CheckOtherBoxesInColumn(int row, int col)
         {
             //debuging function(can be ignored)
             /* if (row == 7 && col == 5 && number == 2 && board[0, 4].Number == 5)
@@ -530,6 +545,7 @@
                 Console.Write("test");
 
             } */
+            List<int> NumbersToRemove = new List<int>();
             int firstRow, secondRow, startColumn;
             bool inColumn = false;
             bool outsideColumn = false;
@@ -560,59 +576,61 @@
                 firstRow = 0;
                 secondRow = 3;
             }
-            for (int j = startColumn; j < startColumn + 3; j++)
+            foreach (int number in board[row, col].PossibleNumbers)
             {
-                for (int i = firstRow; i < firstRow + 3; i++)
+                for (int j = startColumn; j < startColumn + 3; j++)
                 {
-                    if (j == col)
+                    for (int i = firstRow; i < firstRow + 3; i++)
                     {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        if (j == col)
                         {
-                            inColumn = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                inColumn = true;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        else
                         {
-                            outsideColumn = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                outsideColumn = true;
+                            }
                         }
                     }
                 }
-            }
-            if (inColumn && !outsideColumn)
-            {
-                return true;
-            }
-            inColumn = false;
-            outsideColumn = false;
-            for (int j = startColumn; j < startColumn + 3; j++)
-            {
-
-                for (int i = secondRow; i < secondRow + 3; i++)
+                if (inColumn && !outsideColumn)
                 {
-                    if (j == col)
+                    NumbersToRemove.Add(number);
+                }
+                inColumn = false;
+                outsideColumn = false;
+                for (int j = startColumn; j < startColumn + 3; j++)
+                {
+
+                    for (int i = secondRow; i < secondRow + 3; i++)
                     {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        if (j == col)
                         {
-                            inColumn = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                inColumn = true;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (board[i, j].ContainsPossibleNumber(number))
+                        else
                         {
-                            outsideColumn = true;
+                            if (board[i, j].ContainsPossibleNumber(number))
+                            {
+                                outsideColumn = true;
+                            }
                         }
                     }
                 }
+                if (inColumn && !outsideColumn)
+                {
+                    NumbersToRemove.Add(number);
+                }
             }
-            if (inColumn && !outsideColumn)
-            {
-                return true;
-            }
-
-            return false;
+            return NumbersToRemove;
 
         }
         private void PrintLong()
@@ -653,6 +671,84 @@
             }
             Console.WriteLine();
         }
-    }
 
+        public IList<int> CheckNakedPair(int row, int col)
+        {
+            List<int> NumbersToRemove = new List<int>();
+
+            int startRow = 0;
+            int startColumn = 0;
+            if (row / 3 == 0)
+            {
+                startRow = 0;
+            }
+            else if (row / 3 == 1)
+            {
+                startRow = 3;
+            }
+            else
+            {
+                startRow = 6;
+            }
+            if (col / 3 == 0)
+            {
+                startColumn = 0;
+            }
+            else if (col / 3 == 1)
+            {
+                startColumn = 3;
+            }
+            else
+            {
+                startColumn = 6;
+            }
+            for (int i = startRow; i < startRow + 3; i++)
+            {
+                for (int j = startColumn; j < startColumn + 3; j++)
+                {
+                    if ((i != row || j != col) && board[i, j].PossibleNumbers.Count == 2)
+                    {
+                        for (int x = startRow; x < startRow + 3; x++)
+                        {
+                            for (int y = startColumn; y < startColumn + 3; y++)
+                            {
+                                if ((x != i || y != j) && (x != row || y != col) && board[x, y].PossibleNumbers.Count == 2 && board[i, j].PossibleNumbers.SequenceEqual(board[x, y].PossibleNumbers))
+                                {
+
+                                    NumbersToRemove.AddRange(board[i, j].PossibleNumbers);
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 9; i++)
+            {
+                if (i != row && board[i, col].PossibleNumbers.Count == 2)
+                {
+                    for (int x = 0; x < 9; x++)
+                    {
+                        if ((x != i) && x != row && board[x, col].PossibleNumbers.Count == 2 && board[i, col].PossibleNumbers.SequenceEqual(board[x, col].PossibleNumbers))
+                        {
+
+                            NumbersToRemove.AddRange(board[i, col].PossibleNumbers);
+                        }
+                    }
+                }
+                if (i != col && board[i, row].PossibleNumbers.Count == 2)
+                {
+                    for (int x = 0; x < 9; x++)
+                    {
+                        if ((x != i) && x != col && board[row, x].PossibleNumbers.Count == 2 && board[row, i].PossibleNumbers.SequenceEqual(board[row, x].PossibleNumbers))
+                        {
+
+                            NumbersToRemove.AddRange(board[row, i].PossibleNumbers);
+                        }
+                    }
+                }
+            }
+            return NumbersToRemove;
+        }
+    }
 }
