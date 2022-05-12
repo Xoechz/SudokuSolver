@@ -7,6 +7,16 @@
         public override string ToString()
         { return PossibleNumbers.Count == 1 ? PossibleNumbers[0].ToString() : " "; }
 
+        public string ToFullString()
+        {
+            string result = "";
+            foreach (int i in PossibleNumbers)
+            {
+                result += i.ToString();
+            }
+            return result;
+        }
+
         public int Number
         {
             get => PossibleNumbers.Count == 1 ? PossibleNumbers[0] : 0; set => PossibleNumbers = new List<int> { value };

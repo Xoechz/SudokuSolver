@@ -2,23 +2,29 @@
 {
     internal class Sudoku
     {
+        private DateTime startTime;
+
+        private bool[,] solvedSinceLastPrint;
+        public TimeSpan Time => DateTime.Now - startTime;
         private Field[,] board;
 
         public Sudoku()
         {
+            solvedSinceLastPrint = new bool[9, 9];
             board = new Field[9, 9];
             for (int i = 0; i < 9; i++)
             {
                 for (int j = 0; j < 9; j++)
                 {
                     board[i, j] = new Field();
+                    solvedSinceLastPrint[i, j] = false;
                 }
             }
         }
         public Sudoku(int[,] array)
         {
             board = new Field[9, 9];
-
+            solvedSinceLastPrint = new bool[9, 9];
             try
             {
                 if (array.GetLength(0) != 9 || array.GetLength(1) != 9)
@@ -38,6 +44,7 @@
                         {
                             board[i, j] = new Field(array[i, j]);
                         }
+                        solvedSinceLastPrint[i, j] = false;
                     }
                 }
 
@@ -86,15 +93,16 @@
                     Console.WriteLine();
                     if (i % 3 == 2)
                     {
-                        Console.WriteLine("=================================");
+                        Console.WriteLine(("").PadRight(33, '='));
                     }
                     else
                     {
-                        Console.WriteLine("---------------------------------");
+                        Console.WriteLine(("").PadRight(33, '='));
                     }
                 }
             }
             Console.WriteLine();
+            Console.WriteLine(("").PadRight(200, '#'));
         }
 
         public IList<int> CheckRow(int row)
@@ -200,19 +208,19 @@
 
         public void Solve()
         {
+            startTime = DateTime.Now;
             Print();
             FillPossibilities();
-            PrintLong();
             CheckOtherPossibilities();
             if (IsSolved)
             {
                 Print();
-                Console.WriteLine("Solved successfully");
+                Console.WriteLine("Solved successfully in " + Time.TotalSeconds + " seconds");
             }
             else
             {
-                PrintLong();
-                Console.WriteLine("Needs more tactics ¯\\_(ツ)_/¯");
+                PrintLong("Failed to solve");
+                Console.WriteLine("Needs more tactics ¯\\_(ツ)_/¯, abborted after " + Time.TotalSeconds + " seconds");
             }
         }
 
@@ -236,6 +244,7 @@
                         }
                     }
                 }
+                PrintLong("Possibilities filled after " + Time.TotalSeconds + " seconds");
             }
         }
 
@@ -337,6 +346,7 @@
                         }
                     }
                 }
+                PrintLong("Other possibilities checked after " + Time.TotalSeconds + " seconds");
             }
         }
 
@@ -633,17 +643,15 @@
             return NumbersToRemove;
 
         }
-        private void PrintLong()
+        private void PrintLong(String message = "")
         {
             Console.WriteLine("Sudoku Long:");
+            Console.WriteLine(message);
             for (int i = 0; i < 9; i++)
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    foreach (int number in board[i, j].PossibleNumbers)
-                    {
-                        Console.Write(number);
-                    }
+                    Console.Write($"{board[i, j].ToFullString(),9}");
                     if (j < 8)
                     {
                         if (j % 3 == 2)
@@ -656,21 +664,55 @@
                         }
                     }
                 }
+                Console.Write(("").PadRight(10));
+                for (int j = 0; j < 9; j++)
+                {
+                    if (!board[i, j].IsSolved)
+                    {
+                        solvedSinceLastPrint[i, j] = true;
+                    }
+                    else if (solvedSinceLastPrint[i, j])
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        solvedSinceLastPrint[i, j] = false;
+                    }
+                    Console.Write(board[i, j].ToString());
+                    Console.ResetColor();
+                    if (j < 8)
+                    {
+                        if (j % 3 == 2)
+                        {
+                            Console.Write(" | ");
+                        }
+                        else
+                        {
+                            Console.Write(" . ");
+                        }
+                    }
+                }
+
                 if (i < 8)
                 {
                     Console.WriteLine();
                     if (i % 3 == 2)
                     {
-                        Console.WriteLine("=================================");
+                        Console.Write(("").PadRight(105, '='));
+                        Console.Write(("").PadRight(10));
+                        Console.WriteLine(("").PadRight(33, '='));
                     }
                     else
                     {
-                        Console.WriteLine("---------------------------------");
+                        Console.Write(("").PadRight(105, '-'));
+                        Console.Write(("").PadRight(10));
+                        Console.WriteLine(("").PadRight(33, '-'));
                     }
                 }
+
             }
             Console.WriteLine();
+            Console.WriteLine(("").PadRight(200, '#'));
         }
+
 
         public IList<int> CheckNakedPair(int row, int col)
         {
