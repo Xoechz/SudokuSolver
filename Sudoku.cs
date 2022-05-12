@@ -337,9 +337,17 @@
                 {
                     for (int j = 0; j < 9; j++)
                     {
-                        if ((CheckOtherPossibilitiesInBox(i, j) ||
-                        CheckOtherPossibilitiesInCollumn(i, j) ||
-                        CheckOtherPossibilitiesInRow(i, j)))
+                        if (CheckOtherPossibilitiesInBox(i, j))
+                        {
+                            FillPossibilities();
+                            changed = true;
+                        }
+                        if (CheckOtherPossibilitiesInCollumn(i, j))
+                        {
+                            FillPossibilities();
+                            changed = true;
+                        }
+                        if (CheckOtherPossibilitiesInRow(i, j))
                         {
                             FillPossibilities();
                             changed = true;
